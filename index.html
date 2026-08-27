@@ -1,0 +1,1251 @@
+import React, { useState, useEffect } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
+import confetti from 'canvas-confetti';
+import {
+  User,
+  CheckCircle2,
+  AlertCircle,
+  ShieldAlert,
+  Sparkles,
+  Check,
+  Flame,
+  Star,
+  Zap,
+  Crown,
+  Shield,
+  Gem,
+  Coins,
+  Layers,
+  Copy,
+  Lock,
+  ArrowRight,
+  Smartphone,
+  Info,
+  HelpCircle,
+  Clock,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  X,
+  TrendingDown,
+  ShieldCheck,
+  Award,
+  HeartHandshake
+} from 'lucide-react';
+
+// ==========================================
+// 1. DATA TYPES & CONFIGURATION
+// ==========================================
+export type PackageCategory = 'robux' | 'plus';
+
+export interface PackageItem {
+  id: string;
+  name: string;
+  robuxAmount?: number;
+  price: number;
+  formattedPrice: string;
+  category: PackageCategory;
+  period?: string;
+  tag?: string;
+  savingsBadge?: string;
+  features?: string[];
+  iconType?: 'coin' | 'stack' | 'chest' | 'vault' | 'crown' | 'star' | 'diamond' | 'shield';
+}
+
+export interface OrderDetails {
+  orderId: string;
+  username: string;
+  packageItem: PackageItem;
+  utrCode: string;
+  timestamp: string;
+  status: 'verifying' | 'completed';
+}
+
+export const UPI_CONFIG = {
+  upiId: 'naruka13@fam',
+  payeeName: 'Robux Store Gaming Gateway',
+};
+
+export const ROBUX_PACKS: PackageItem[] = [
+  {
+    id: 'robux-400',
+    name: '400 Robux',
+    robuxAmount: 400,
+    price: 199,
+    formattedPrice: '₹199',
+    category: 'robux',
+    tag: 'STARTER',
+    features: ['Instant Direct Transfer', 'Standard Delivery Rate', 'Zero Processing Fee'],
+    iconType: 'coin',
+  },
+  {
+    id: 'robux-800',
+    name: '800 Robux',
+    robuxAmount: 800,
+    price: 499,
+    formattedPrice: '₹499',
+    category: 'robux',
+    tag: 'POPULAR',
+    features: ['Instant Direct Transfer', 'Fast-Track Queue', '24/7 Support Guaranteed'],
+    iconType: 'stack',
+  },
+  {
+    id: 'robux-1200',
+    name: '1,200 Robux',
+    robuxAmount: 1200,
+    price: 599,
+    formattedPrice: '₹599',
+    category: 'robux',
+    tag: 'HOT DEAL 🔥',
+    savingsBadge: 'Save 15%',
+    features: ['Instant Direct Transfer', 'Bonus Avatar Flair', 'Priority Processing'],
+    iconType: 'stack',
+  },
+  {
+    id: 'robux-1700',
+    name: '1,700 Robux',
+    robuxAmount: 1700,
+    price: 799,
+    formattedPrice: '₹799',
+    category: 'robux',
+    tag: 'RECOMMENDED',
+    savingsBadge: 'Save 20%',
+    features: ['Instant Direct Transfer', 'VIP Priority Delivery', 'Zero Tax Deductions'],
+    iconType: 'chest',
+  },
+  {
+    id: 'robux-3150',
+    name: '3,150 Robux',
+    robuxAmount: 3150,
+    price: 1199,
+    formattedPrice: '₹1,199',
+    category: 'robux',
+    tag: 'BEST VALUE ⚡',
+    savingsBadge: 'Save 30%',
+    features: ['Instant Direct Transfer', 'Express Automated Bot', 'Premium In-Game Items Ready'],
+    iconType: 'vault',
+  },
+  {
+    id: 'robux-4500',
+    name: '4,500 Robux',
+    robuxAmount: 4500,
+    price: 1999,
+    formattedPrice: '₹1,999',
+    category: 'robux',
+    tag: 'MEGA PACK 💎',
+    savingsBadge: 'Save 38%',
+    features: ['Instant Direct Transfer', 'Top Tier Delivery', 'Exclusive Roblox Server Access'],
+    iconType: 'diamond',
+  },
+  {
+    id: 'robux-10000',
+    name: '10,000 Robux',
+    robuxAmount: 10000,
+    price: 2999,
+    formattedPrice: '₹2,999',
+    category: 'robux',
+    tag: 'ULTIMATE WHALE 👑',
+    savingsBadge: 'Save 50%',
+    features: ['Instant Direct Transfer', 'Instant Ultra VIP Bot', 'Full 10,000 Robux Balance'],
+    iconType: 'crown',
+  },
+];
+
+export const ROBLOX_PLUS_PACKS: PackageItem[] = [
+  {
+    id: 'plus-monthly',
+    name: 'Plus Monthly',
+    price: 199,
+    formattedPrice: '₹199/month',
+    period: '/month',
+    category: 'plus',
+    tag: 'ENTRY PASS ⭐',
+    features: ['Roblox Plus Badge', '10% Extra Trade Bonus', 'Exclusive Store Discount Perks'],
+    iconType: 'star',
+  },
+  {
+    id: 'plus-500',
+    name: 'Plus 500',
+    price: 399,
+    formattedPrice: '₹399/month',
+    period: '/month',
+    category: 'plus',
+    tag: 'MOST POPULAR ⭐',
+    features: ['Includes 500 Monthly Robux', 'Exclusive Member Avatar Items', 'Premium Trade Unlocks'],
+    iconType: 'shield',
+  },
+  {
+    id: 'plus-1000',
+    name: 'Plus 1000',
+    price: 999,
+    formattedPrice: '₹999/month',
+    period: '/month',
+    category: 'plus',
+    tag: 'PRO GAMER ⭐',
+    savingsBadge: 'Save 25%',
+    features: ['Includes 1,000 Monthly Robux', 'Double Trade Velocity', 'Developer Privileges & Badges'],
+    iconType: 'crown',
+  },
+  {
+    id: 'plus-2000',
+    name: 'Plus 2000',
+    price: 1499,
+    formattedPrice: '₹1,499/month',
+    period: '/month',
+    category: 'plus',
+    tag: 'ELITE VIP ⭐',
+    savingsBadge: 'Save 40%',
+    features: ['Includes 2,000 Monthly Robux', 'VIP Concierge & Fast Pass', 'Maximum Trade Limit Increase'],
+    iconType: 'diamond',
+  },
+];
+
+// ==========================================
+// 2. MAIN APP COMPONENT
+// ==========================================
+export default function App() {
+  const [username, setUsername] = useState('');
+  const [confirmUsername, setConfirmUsername] = useState('');
+  const [activeTab, setActiveTab] = useState<PackageCategory>('robux');
+  const [selectedPackage, setSelectedPackage] = useState<PackageItem | null>(null);
+  const [activeOrder, setActiveOrder] = useState<OrderDetails | null>(null);
+  const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
+
+  // Form & Payment States
+  const [step1Error, setStep1Error] = useState<string | null>(null);
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [utrCode, setUtrCode] = useState('');
+  const [utrError, setUtrError] = useState<string | null>(null);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [showHowToPay, setShowHowToPay] = useState(false);
+  const [openFaqIdx, setOpenFaqIdx] = useState<number | null>(0);
+
+  // Tracking Modal State
+  const [trackQuery, setTrackQuery] = useState('');
+  const [trackSearched, setTrackSearched] = useState(false);
+  const [trackResult, setTrackResult] = useState<any>(null);
+
+  // Success Modal State
+  const [secondsRemaining, setSecondsRemaining] = useState(300);
+  const [copiedReceipt, setCopiedReceipt] = useState(false);
+
+  const isMatched = username.trim().length > 0 && username.trim().toLowerCase() === confirmUsername.trim().toLowerCase();
+  const isMismatch = confirmUsername.trim().length > 0 && username.trim().toLowerCase() !== confirmUsername.trim().toLowerCase();
+
+  const handleStep1Continue = () => {
+    if (!username.trim()) {
+      setStep1Error('Please enter your Roblox username');
+      return;
+    }
+    if (!confirmUsername.trim()) {
+      setStep1Error('Please confirm your Roblox username');
+      return;
+    }
+    if (username.trim().toLowerCase() !== confirmUsername.trim().toLowerCase()) {
+      setStep1Error('Usernames do not match! Please check for typos.');
+      return;
+    }
+    setStep1Error(null);
+    const el = document.getElementById('step-packages');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleSelectPackage = (pkg: PackageItem) => {
+    setSelectedPackage(pkg);
+    setTimeout(() => {
+      const el = document.getElementById('step-payment');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  };
+
+  const handleCopyUpi = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(UPI_CONFIG.upiId);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = UPI_CONFIG.upiId;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      setCopiedUpi(true);
+      setTimeout(() => setCopiedUpi(false), 4000);
+    } catch {
+      setCopiedUpi(true);
+      setTimeout(() => setCopiedUpi(false), 4000);
+    }
+  };
+
+  const handleSubmitPayment = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanUtr = utrCode.trim();
+    if (!cleanUtr) {
+      setUtrError('Please enter your 12-digit UTR / Transaction ID from your payment app');
+      return;
+    }
+    if (cleanUtr.length < 12) {
+      setUtrError(`UTR Code must be 12 digits (currently ${cleanUtr.length} digits). Please check your receipt.`);
+      return;
+    }
+
+    setUtrError(null);
+    setIsSubmittingPayment(true);
+
+    setTimeout(() => {
+      setIsSubmittingPayment(false);
+      const newOrder: OrderDetails = {
+        orderId: `RBX-${Math.floor(10000 + Math.random() * 90000)}`,
+        username: username.trim() || 'ValuedGamer',
+        packageItem: selectedPackage!,
+        utrCode: cleanUtr,
+        timestamp: new Date().toLocaleString('en-IN', {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        }),
+        status: 'verifying',
+      };
+      setActiveOrder(newOrder);
+
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#4bc2e3', '#9333ea', '#10b981', '#ffffff'],
+      });
+      setSecondsRemaining(300);
+    }, 600);
+  };
+
+  useEffect(() => {
+    if (activeOrder) {
+      const interval = setInterval(() => {
+        setSecondsRemaining((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [activeOrder]);
+
+  const handleTrackSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!trackQuery.trim()) return;
+    setTrackSearched(true);
+    setTrackResult({
+      found: true,
+      orderId: trackQuery.startsWith('RBX-') ? trackQuery.toUpperCase() : `RBX-${Math.floor(10000 + Math.random() * 90000)}`,
+      username: trackQuery.startsWith('RBX-') ? 'GamerVip_Pro' : trackQuery.trim(),
+      packName: '1,700 Robux Pack',
+      amount: '₹799',
+      status: 'Transfer In Queue (Estimated 3-7 mins)',
+      progress: 70,
+    });
+  };
+
+  const renderIcon = (type?: string) => {
+    switch (type) {
+      case 'coin': return <Coins className="w-6 h-6 text-[#4bc2e3]" />;
+      case 'stack': return <Layers className="w-6 h-6 text-[#4bc2e3]" />;
+      case 'chest': return <Zap className="w-6 h-6 text-[#4bc2e3]" />;
+      case 'vault': return <Flame className="w-6 h-6 text-amber-400" />;
+      case 'diamond': return <Gem className="w-6 h-6 text-[#4bc2e3]" />;
+      case 'crown': return <Crown className="w-6 h-6 text-amber-300" />;
+      case 'star': return <Star className="w-6 h-6 text-amber-400 fill-amber-400" />;
+      case 'shield': return <Shield className="w-6 h-6 text-[#4bc2e3]" />;
+      default: return <Coins className="w-6 h-6 text-[#4bc2e3]" />;
+    }
+  };
+
+  const currentPackageList = activeTab === 'robux' ? ROBUX_PACKS : ROBLOX_PLUS_PACKS;
+  const upiDeepLink = selectedPackage
+    ? `upi://pay?pa=${UPI_CONFIG.upiId}&pn=Robux%20Store&am=${selectedPackage.price}&cu=INR&tn=ROBUX-${username ? encodeURIComponent(username) : 'ORDER'}`
+    : '';
+
+  return (
+    <div className="min-h-screen bg-[#0b1116] text-slate-100 flex flex-col selection:bg-[#4bc2e3]/30 selection:text-[#4bc2e3] font-sans antialiased">
+      
+      {/* ---------------- HEADER ---------------- */}
+      <header className="sticky top-0 z-40 backdrop-blur-md bg-[#0b1116]/90 border-b border-[#4bc2e3]/20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#4bc2e3] to-[#1e40af] p-0.5 shadow-lg group-hover:scale-105 transition-transform">
+              <div className="w-full h-full bg-[#0b1116] rounded-[10px] flex items-center justify-center">
+                <span className="font-extrabold text-xl text-[#4bc2e3]">R</span>
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h1 className="font-bold text-2xl tracking-wider text-white">
+                  ROBUX <span className="text-[#4bc2e3] drop-shadow-[0_0_12px_rgba(75,194,227,0.8)]">STORE</span>
+                </h1>
+                <span className="bg-[#4bc2e3]/15 text-[#4bc2e3] text-[10px] font-bold px-1.5 py-0.5 rounded border border-[#4bc2e3]/40">
+                  INDIA 🇮🇳
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 font-medium hidden sm:block">
+                Fast, Safe &amp; Instant Roblox In-Game Credits
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full bg-[#111a22] border border-[#4bc2e3]/30 text-xs font-semibold">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-slate-300 text-[11px] sm:text-xs">
+                <span className="text-emerald-400 font-bold">Online</span> <span className="hidden md:inline">• Instant Bot Delivery</span>
+              </span>
+            </div>
+
+            <button
+              onClick={() => setIsTrackModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-200 bg-[#16222f] hover:bg-[#1f3142] border border-slate-700 hover:border-[#4bc2e3]/50 transition-all hover:text-[#4bc2e3] cursor-pointer"
+            >
+              <Clock className="w-3.5 h-3.5 text-[#4bc2e3]" />
+              <span className="hidden sm:inline">Track Order</span>
+              <span className="sm:hidden">Track</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-[#0b1116] via-[#112233] to-[#0b1116] border-t border-b border-[#4bc2e3]/15 py-1 px-4 text-center overflow-hidden">
+          <div className="flex items-center justify-center gap-4 text-[11px] sm:text-xs text-slate-300 font-medium animate-pulse">
+            <span className="flex items-center gap-1 text-[#4bc2e3]"><Sparkles className="w-3 h-3" /> 100% Genuine Robux</span>
+            <span className="text-slate-600 hidden sm:inline">•</span>
+            <span className="flex items-center gap-1 text-emerald-400"><ShieldCheck className="w-3 h-3" /> No Password Required</span>
+            <span className="text-slate-600 hidden md:inline">•</span>
+            <span className="hidden md:flex items-center gap-1 text-purple-400"><Zap className="w-3 h-3" /> Instant UPI Gateway</span>
+          </div>
+        </div>
+      </header>
+
+      {/* ---------------- HERO TITLE ---------------- */}
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-2 text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#111a22] border border-[#4bc2e3]/30 text-[#4bc2e3] text-xs font-bold mb-3 shadow-[0_0_15px_rgba(75,194,227,0.3)]">
+          <span>⚡ OFFICIAL ROBLOX IN-GAME STORE</span>
+        </div>
+        <h1 className="font-extrabold text-3xl sm:text-4xl md:text-5xl text-white tracking-wide">
+          GET INSTANT <span className="text-[#4bc2e3] drop-shadow-[0_0_20px_rgba(75,194,227,0.6)]">ROBUX</span> &amp; PERKS
+        </h1>
+        <p className="text-slate-400 text-xs sm:text-sm max-w-lg mx-auto mt-2">
+          Fast automated delivery directly to your Roblox account via secure instant UPI transfer.
+        </p>
+      </div>
+
+      <main className="flex-1 w-full flex flex-col gap-2">
+        
+        {/* ---------------- STEP 1 & 2: ACCOUNT IDENTIFICATION ---------------- */}
+        <section id="step-account" className="w-full max-w-4xl mx-auto px-4 sm:px-6 pt-8 pb-4">
+          <div className="relative rounded-2xl bg-[#0f1720] border-2 border-[#4bc2e3]/40 p-5 sm:p-8 shadow-2xl hover:border-[#4bc2e3]/70 shadow-[0_0_20px_rgba(75,194,227,0.2)]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-5 mb-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#4bc2e3]/20 border border-[#4bc2e3] text-[#4bc2e3] font-bold text-xs">
+                    01
+                  </span>
+                  <h2 id="step-1-title" className="font-bold text-xl sm:text-2xl text-white tracking-wide">
+                    Step 1 &amp; 2: Account Identification
+                  </h2>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-400 mt-1 pl-9">
+                  Enter your exact Roblox username where the Robux will be credited.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-semibold self-start sm:self-center">
+                <ShieldAlert className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Password Not Required</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+              {/* Roblox Username */}
+              <div className="flex flex-col gap-2">
+                <label htmlFor="roblox-username-input" className="text-xs sm:text-sm font-bold text-slate-200 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <User className="w-4 h-4 text-[#4bc2e3]" />
+                    Roblox Username <span className="text-[#4bc2e3]">*</span>
+                  </span>
+                  {username.trim() && (
+                    <span className="text-[11px] text-slate-400 font-normal">{username.length} chars</span>
+                  )}
+                </label>
+                <div className="relative">
+                  <input
+                    id="roblox-username-input"
+                    type="text"
+                    value={username}
+                    onChange={(e) => {
+                      setUsername(e.target.value);
+                      if (step1Error) setStep1Error(null);
+                    }}
+                    placeholder="Enter your Roblox username (e.g. Builderman)"
+                    className="w-full px-4 py-3.5 bg-[#0b1116] border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#4bc2e3] focus:ring-2 focus:ring-[#4bc2e3]/30 transition-all text-sm font-medium"
+                    autoComplete="off"
+                  />
+                  {username.trim() && (
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
+                      <span className="text-xs bg-[#16222f] px-2 py-0.5 rounded text-[#4bc2e3] font-mono border border-[#4bc2e3]/30">
+                        @{username.trim()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Confirm Username */}
+              <div className="flex flex-col gap-2">
+                <label htmlFor="confirm-username-input" className="text-xs sm:text-sm font-bold text-slate-200 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <User className="w-4 h-4 text-[#4bc2e3]" />
+                    Confirm Username <span className="text-[#4bc2e3]">*</span>
+                  </span>
+                  {isMatched && (
+                    <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Matched
+                    </span>
+                  )}
+                </label>
+                <div className="relative">
+                  <input
+                    id="confirm-username-input"
+                    type="text"
+                    value={confirmUsername}
+                    onChange={(e) => {
+                      setConfirmUsername(e.target.value);
+                      if (step1Error) setStep1Error(null);
+                    }}
+                    placeholder="Re-enter your Roblox username to confirm"
+                    className={`w-full px-4 py-3.5 bg-[#0b1116] border rounded-xl text-white placeholder-slate-500 focus:outline-none transition-all text-sm font-medium ${
+                      isMismatch
+                        ? 'border-rose-500/80 focus:ring-2 focus:ring-rose-500/30'
+                        : isMatched
+                        ? 'border-emerald-500/80 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/30'
+                        : 'border-slate-700 focus:border-[#4bc2e3] focus:ring-2 focus:ring-[#4bc2e3]/30'
+                    }`}
+                    autoComplete="off"
+                  />
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                    {isMatched ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : isMismatch ? <AlertCircle className="w-5 h-5 text-rose-400" /> : null}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {username.trim() && (
+              <div className="mb-6 p-3.5 rounded-xl bg-[#0b1116] border border-[#4bc2e3]/30 flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-lg bg-gradient-to-tr from-[#16222f] to-[#1f3142] border border-[#4bc2e3]/50 flex items-center justify-center text-lg font-black text-[#4bc2e3] shadow-inner">
+                    {username.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-white text-sm">{username}</span>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        Ready for Delivery
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">Roblox In-Game Recipient Profile</p>
+                  </div>
+                </div>
+                <span className="text-[11px] text-[#4bc2e3] font-semibold flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> Direct VIP Transfer
+                </span>
+              </div>
+            )}
+
+            {step1Error && (
+              <div className="mb-5 p-3 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>{step1Error}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col items-center justify-center">
+              <button
+                id="buy-robux-now-btn"
+                onClick={handleStep1Continue}
+                className="w-full sm:w-auto min-w-[280px] sm:min-w-[340px] px-8 py-4 rounded-xl bg-gradient-to-r from-[#4bc2e3] via-[#38bdf8] to-[#0284c7] hover:from-[#38bdf8] hover:to-[#4bc2e3] text-[#0b1116] font-black text-lg tracking-wider uppercase shadow-xl hover:scale-[1.02] active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_25px_rgba(75,194,227,0.5)] flex items-center justify-center gap-2"
+              >
+                <span>⚡ Buy Robux Now ⚡</span>
+              </button>
+              <span className="text-[11px] text-slate-400 mt-2.5">
+                Clicking will smoothly navigate to package selection below
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* ---------------- STEP 4: SELECT YOUR PACKAGE ---------------- */}
+        <section id="step-packages" className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 scroll-mt-20">
+          <div className="rounded-2xl bg-[#0f1720] border-2 border-[#4bc2e3]/40 p-5 sm:p-8 shadow-2xl hover:border-[#4bc2e3]/60 shadow-[0_0_20px_rgba(75,194,227,0.2)]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5 mb-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#4bc2e3]/20 border border-[#4bc2e3] text-[#4bc2e3] font-bold text-xs">
+                    02
+                  </span>
+                  <h2 id="step-2-title" className="font-bold text-xl sm:text-2xl text-white tracking-wide">
+                    Step 4: Select Your Package
+                  </h2>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-400 mt-1 pl-9">
+                  Choose your preferred Robux volume or premium Roblox Plus membership tier.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-[#16222f] border border-slate-700 text-xs text-slate-300">
+                <span className="text-[#4bc2e3] font-bold">₹ INR</span>
+                <span>Lowest Price Guarantee</span>
+              </div>
+            </div>
+
+            {/* Toggle Tabs */}
+            <div id="package-toggle-tabs" className="flex p-1.5 bg-[#0b1116] rounded-xl border border-slate-800 max-w-md mx-auto mb-8">
+              <button
+                id="tab-robux-packs"
+                onClick={() => setActiveTab('robux')}
+                className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  activeTab === 'robux'
+                    ? 'bg-gradient-to-r from-[#4bc2e3] to-[#0284c7] text-[#0b1116] shadow-lg shadow-[0_0_15px_rgba(75,194,227,0.4)]'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-[#16222f]'
+                }`}
+              >
+                <Coins className="w-4 h-4" />
+                <span>Robux Packs</span>
+              </button>
+
+              <button
+                id="tab-roblox-plus"
+                onClick={() => setActiveTab('plus')}
+                className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  activeTab === 'plus'
+                    ? 'bg-gradient-to-r from-amber-400 to-amber-600 text-black shadow-lg shadow-amber-500/20'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-[#16222f]'
+                }`}
+              >
+                <Star className="w-4 h-4 fill-current" />
+                <span>Roblox Plus ⭐</span>
+              </button>
+            </div>
+
+            {/* 2-Column Grid Cards */}
+            <div id="package-cards-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+              {currentPackageList.map((pkg) => {
+                const isSelected = selectedPackage?.id === pkg.id;
+                return (
+                  <div
+                    key={pkg.id}
+                    id={`package-card-${pkg.id}`}
+                    onClick={() => handleSelectPackage(pkg)}
+                    className={`relative rounded-xl p-5 cursor-pointer transition-all duration-300 flex flex-col justify-between group ${
+                      isSelected
+                        ? 'bg-[#111f2d] border-2 border-[#4bc2e3] shadow-xl shadow-[0_0_30px_rgba(75,194,227,0.5)] scale-[1.01]'
+                        : 'bg-[#0b1116] border border-slate-800 hover:border-[#4bc2e3]/60 hover:bg-[#0e1720] hover:shadow-lg'
+                    }`}
+                  >
+                    {/* Highlight Tag & Savings Badge */}
+                    <div className="absolute top-3.5 right-3.5 flex flex-col items-end gap-1.5">
+                      {pkg.savingsBadge && (
+                        <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-400/50 uppercase tracking-wider flex items-center gap-1 shadow-sm animate-pulse">
+                          <TrendingDown className="w-3 h-3" />
+                          {pkg.savingsBadge}
+                        </span>
+                      )}
+                      {pkg.tag && (
+                        <span className={`text-[10px] font-extrabold px-2.5 py-0.75 rounded-md uppercase tracking-wider ${
+                          isSelected ? 'bg-[#4bc2e3] text-[#0b1116]' : 'bg-[#162a38] text-[#4bc2e3] border border-[#4bc2e3]/30'
+                        }`}>
+                          {pkg.tag}
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <div className="flex items-center gap-3 mb-3 pr-24">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center border transition-all ${
+                          isSelected ? 'bg-[#4bc2e3]/20 border-[#4bc2e3] shadow-inner' : 'bg-[#16222f] border-slate-700 group-hover:border-[#4bc2e3]/40'
+                        }`}>
+                          {renderIcon(pkg.iconType)}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg sm:text-xl text-white group-hover:text-[#4bc2e3] transition-colors">
+                            {pkg.name}
+                          </h3>
+                          <p className="text-xs text-slate-400">
+                            {pkg.category === 'robux' ? 'Instant Game Transfer' : 'Monthly Premium Perks'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="my-3 py-2 px-3 rounded-lg bg-[#070b0e] border border-slate-800/80 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-400 font-medium">Price:</span>
+                          {pkg.savingsBadge && (
+                            <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30">
+                              {pkg.savingsBadge}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xl sm:text-2xl font-black text-[#4bc2e3] tracking-tight">
+                          {pkg.formattedPrice}
+                        </span>
+                      </div>
+
+                      {pkg.features && (
+                        <ul className="space-y-1.5 mb-4 text-xs text-slate-300">
+                          {pkg.features.map((feat, idx) => (
+                            <li key={idx} className="flex items-center gap-2">
+                              <Check className="w-3.5 h-3.5 text-[#4bc2e3] shrink-0" />
+                              <span>{feat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-800/80 mt-auto">
+                      <button
+                        type="button"
+                        className={`w-full py-2.5 px-4 rounded-lg font-bold text-xs sm:text-sm tracking-wider uppercase flex items-center justify-center gap-2 transition-all ${
+                          isSelected
+                            ? 'bg-[#4bc2e3] text-[#0b1116] shadow-md font-extrabold'
+                            : 'bg-[#16222f] text-slate-200 group-hover:bg-[#4bc2e3]/20 group-hover:text-[#4bc2e3] group-hover:border group-hover:border-[#4bc2e3]/40'
+                        }`}
+                      >
+                        {isSelected ? <> <Check className="w-4 h-4" /> Package Selected </> : `Select ${pkg.name}`}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-xs text-slate-400">
+                👆 Click on any package to instantly proceed to the <span className="text-[#4bc2e3] font-semibold">UPI Payment Gateway</span> below.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ---------------- STEP 3: SECURE GATEWAY PAYMENT ---------------- */}
+        {selectedPackage ? (
+          <section id="step-payment" className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 scroll-mt-20">
+            <div className="relative rounded-2xl bg-[#0f1720] border-2 border-[#4bc2e3]/60 p-5 sm:p-8 shadow-2xl shadow-[0_0_25px_rgba(75,194,227,0.3)]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5 mb-6">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#4bc2e3]/20 border border-[#4bc2e3] text-[#4bc2e3] font-bold text-xs">
+                      03
+                    </span>
+                    <h2 id="step-3-title" className="font-bold text-xl sm:text-2xl text-white tracking-wide flex items-center gap-2">
+                      💳 Secure Gateway Payment
+                    </h2>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-400 mt-1 pl-9">
+                    Complete your UPI payment and enter the transaction reference code.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-xs text-slate-300">
+                  <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>256-Bit SSL Encrypted</span>
+                </div>
+              </div>
+
+              {/* Summary Box */}
+              <div id="order-summary-box" className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div className="p-4 rounded-xl bg-[#0b1116] border border-[#4bc2e3]/40 shadow-inner">
+                  <span className="text-xs text-slate-400 font-semibold block uppercase tracking-wider mb-1">
+                    Selected Package:
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg sm:text-xl font-bold text-white">{selectedPackage.name}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-[#4bc2e3]/20 text-[#4bc2e3] border border-[#4bc2e3]/40 font-bold uppercase">
+                      {selectedPackage.category === 'robux' ? 'Robux Pack' : 'Plus Member'}
+                    </span>
+                  </div>
+                  {username && (
+                    <p className="text-xs text-slate-400 mt-1">
+                      Recipient: <span className="text-emerald-400 font-mono font-medium">@{username}</span>
+                    </p>
+                  )}
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#0b1116] border border-[#4bc2e3]/40 shadow-inner flex flex-col justify-between">
+                  <span className="text-xs text-slate-400 font-semibold block uppercase tracking-wider mb-1">
+                    Total Amount:
+                  </span>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl sm:text-3xl font-black text-[#4bc2e3] tracking-tight">
+                      {selectedPackage.formattedPrice}
+                    </span>
+                    <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5" /> Direct Fee: ₹0
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* UPI QR Box */}
+              <div className="flex flex-col items-center justify-center my-6">
+                <div id="upi-qr-container" className="w-full max-w-[280px] sm:max-w-[300px] p-5 rounded-2xl bg-white text-slate-900 shadow-2xl flex flex-col items-center justify-center border-4 border-[#4bc2e3]">
+                  <div className="flex items-center justify-between w-full mb-3 pb-2 border-b border-slate-200">
+                    <span className="font-black text-xs sm:text-sm tracking-wider text-slate-800 uppercase">
+                      UPI PAYMENT
+                    </span>
+                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      {selectedPackage.formattedPrice}
+                    </span>
+                  </div>
+
+                  <div className="p-2.5 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center">
+                    <QRCodeSVG value={upiDeepLink} size={185} level="H" includeMargin={false} className="w-full h-auto" />
+                  </div>
+
+                  <p className="mt-3 text-xs sm:text-sm font-bold text-slate-800 text-center tracking-wide">
+                    Scan to Pay via UPI
+                  </p>
+
+                  <div className="mt-2.5 pt-2 border-t border-slate-200 w-full flex items-center justify-center gap-2 text-[10px] text-slate-500 font-semibold">
+                    <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">GPay</span>
+                    <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">PhonePe</span>
+                    <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">Paytm</span>
+                    <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">BHIM</span>
+                  </div>
+                </div>
+
+                <div className="mt-3 block sm:hidden">
+                  <a
+                    href={upiDeepLink}
+                    id="mobile-pay-now-link"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#16222f] hover:bg-[#1f3142] text-[#4bc2e3] text-xs font-bold border border-[#4bc2e3]/40"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>Tap here to Pay directly on Mobile UPI</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* UPI Reference & Copy */}
+              <div id="upi-id-reference-container" className="my-6 max-w-xl mx-auto">
+                <label className="text-xs sm:text-sm font-bold text-slate-200 block mb-2">UPI ID Reference:</label>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <div className="flex-1 px-4 py-3.5 bg-[#0b1116] border border-slate-700 rounded-xl text-white font-mono text-sm sm:text-base flex items-center justify-between">
+                    <span className="font-bold text-[#4bc2e3]">{UPI_CONFIG.upiId}</span>
+                    <span className="text-[11px] text-slate-400">Official Merchant ID</span>
+                  </div>
+                  <button
+                    type="button"
+                    id="copy-upi-btn"
+                    onClick={handleCopyUpi}
+                    className="px-5 py-3.5 bg-[#16222f] hover:bg-[#1e3040] text-slate-100 border border-[#4bc2e3]/50 hover:border-[#4bc2e3] rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+                  >
+                    <Copy className="w-4 h-4 text-[#4bc2e3]" />
+                    <span>Copy</span>
+                  </button>
+                </div>
+
+                {copiedUpi && (
+                  <div id="upi-copied-feedback" className="mt-2.5 p-2.5 rounded-lg bg-emerald-950/60 border border-emerald-500/50 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span>✓ UPI ID copied successfully!</span>
+                  </div>
+                )}
+              </div>
+
+              {/* UTR Form */}
+              <form onSubmit={handleSubmitPayment} className="max-w-xl mx-auto mt-6">
+                <div id="utr-field-container" className="mb-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <label htmlFor="utr-code-input" className="text-xs sm:text-sm font-bold text-slate-200 flex items-center gap-1.5">
+                      <span>UTR / Transaction ID (12 Digits)</span>
+                      <span className="text-[#4bc2e3]">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowHowToPay(!showHowToPay)}
+                      className="text-[11px] text-[#4bc2e3] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <HelpCircle className="w-3 h-3" /> Where is UTR?
+                    </button>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      id="utr-code-input"
+                      type="text"
+                      maxLength={20}
+                      value={utrCode}
+                      onChange={(e) => {
+                        setUtrCode(e.target.value);
+                        if (utrError) setUtrError(null);
+                      }}
+                      placeholder="Enter 12-digit UTR Code..."
+                      className="w-full px-4 py-3.5 bg-[#0b1116] border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 transition-all text-sm sm:text-base font-mono font-medium"
+                    />
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-500">
+                      {utrCode.trim().length > 0 && (
+                        <span className={utrCode.trim().length >= 12 ? 'text-emerald-400 font-bold' : 'text-amber-400'}>
+                          {utrCode.trim().length}/12 Digits
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {showHowToPay && (
+                    <div className="mt-3 p-3.5 rounded-xl bg-[#0b1116] border border-slate-700 text-xs text-slate-300 space-y-2">
+                      <p className="font-bold text-slate-200 flex items-center gap-1">
+                        <Info className="w-3.5 h-3.5 text-[#4bc2e3]" /> How to find your 12-Digit UTR Code:
+                      </p>
+                      <ul className="list-disc list-inside space-y-1 text-slate-400 pl-1">
+                        <li><strong>Google Pay:</strong> Open Transaction details → Look for "UPI transaction ID" (12 numbers).</li>
+                        <li><strong>PhonePe:</strong> Open History → Click Payment → Copy 12-digit "UTR Number".</li>
+                        <li><strong>Paytm:</strong> View Passbook → Transaction Details → Copy "UPI Ref No."</li>
+                      </ul>
+                    </div>
+                  )}
+
+                  {utrError && (
+                    <p className="mt-2 text-xs text-rose-400 flex items-center gap-1.5 font-medium">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span>{utrError}</span>
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <button
+                    type="submit"
+                    id="submit-payment-btn"
+                    disabled={isSubmittingPayment}
+                    className="w-full py-4 px-8 rounded-xl bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-black text-lg tracking-wider uppercase shadow-2xl hover:scale-[1.02] active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2.5 disabled:opacity-75 shadow-[0_0_25px_rgba(168,85,247,0.5)]"
+                  >
+                    {isSubmittingPayment ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        <span>Verifying Transaction...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Submit Payment</span>
+                        <ArrowRight className="w-5 h-5" />
+                      </>
+                    )}
+                  </button>
+
+                  <p className="text-[11px] text-slate-400 text-center mt-3">
+                    🔒 Instant automated queue. Robux will be transferred to <strong className="text-slate-200">@{username || 'your account'}</strong> after payment confirmation.
+                  </p>
+                </div>
+              </form>
+            </div>
+          </section>
+        ) : (
+          <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-4 text-center">
+            <div className="p-6 rounded-2xl bg-[#0f1720]/60 border border-dashed border-slate-800 text-slate-500 text-xs sm:text-sm">
+              <span>💳 Step 3 (Payment Gateway) will unlock automatically when you pick a package above.</span>
+            </div>
+          </div>
+        )}
+
+        {/* ---------------- TRUST FEATURES ---------------- */}
+        <section className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl bg-[#0f1720] border border-slate-800/80 hover:border-[#4bc2e3]/40 transition-all">
+              <div className="w-9 h-9 rounded-lg bg-[#16222f] border border-slate-700 flex items-center justify-center mb-3">
+                <Zap className="w-5 h-5 text-[#4bc2e3]" />
+              </div>
+              <h4 className="font-bold text-sm text-white mb-1">Instant Bot Transfer</h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed">Direct automated dispatch to your Roblox username in 5-15 mins.</p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#0f1720] border border-slate-800/80 hover:border-[#4bc2e3]/40 transition-all">
+              <div className="w-9 h-9 rounded-lg bg-[#16222f] border border-slate-700 flex items-center justify-center mb-3">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              </div>
+              <h4 className="font-bold text-sm text-white mb-1">100% Safe &amp; Clean</h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed">No passwords required. Full compliance with Roblox safety guidelines.</p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#0f1720] border border-slate-800/80 hover:border-[#4bc2e3]/40 transition-all">
+              <div className="w-9 h-9 rounded-lg bg-[#16222f] border border-slate-700 flex items-center justify-center mb-3">
+                <Award className="w-5 h-5 text-amber-400" />
+              </div>
+              <h4 className="font-bold text-sm text-white mb-1">Best Indian Rates</h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed">Save up to 50% compared to standard international store conversion fees.</p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#0f1720] border border-slate-800/80 hover:border-[#4bc2e3]/40 transition-all">
+              <div className="w-9 h-9 rounded-lg bg-[#16222f] border border-slate-700 flex items-center justify-center mb-3">
+                <HeartHandshake className="w-5 h-5 text-purple-400" />
+              </div>
+              <h4 className="font-bold text-sm text-white mb-1">Dedicated UPI Support</h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed">Seamless UPI reference verification with active 24/7 gamer assistance.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ---------------- FAQ SECTION ---------------- */}
+        <section className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6">
+          <div className="rounded-2xl bg-[#0f1720] border border-slate-800 p-5 sm:p-7">
+            <div className="flex items-center gap-2 mb-4">
+              <HelpCircle className="w-5 h-5 text-[#4bc2e3]" />
+              <h3 className="font-bold text-lg sm:text-xl text-white">Frequently Asked Questions</h3>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                {
+                  q: 'Do you need my Roblox account password or login credentials?',
+                  a: 'Never! We will NEVER ask for your password, email, or PIN. We only require your Roblox Username to send the Robux directly via our verified VIP creator payout bot.',
+                },
+                {
+                  q: 'How long does it take for Robux to arrive after payment?',
+                  a: 'Most orders are processed within 5 to 15 minutes after entering your valid 12-digit UPI UTR / Transaction ID. During high peak periods, it may take up to 30 minutes.',
+                },
+                {
+                  q: 'Where do I find the 12-digit UTR / Transaction ID?',
+                  a: 'After completing your UPI payment via Google Pay, PhonePe, Paytm, or BHIM to our merchant ID (naruka13@fam), view the completed payment receipt in your app. Look for the 12-digit number labeled "UTR", "UPI Transaction ID", or "UPI Ref No."',
+                },
+                {
+                  q: 'What is the Roblox Plus ⭐ membership?',
+                  a: 'Roblox Plus memberships provide monthly recurring Robux disbursements, special trading bonuses, avatar badge flairs, and discounted in-game shop rates.',
+                },
+              ].map((faq, idx) => {
+                const isOpen = openFaqIdx === idx;
+                return (
+                  <div key={idx} className="rounded-xl bg-[#0b1116] border border-slate-800/80 overflow-hidden transition-all">
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaqIdx(isOpen ? null : idx)}
+                      className="w-full p-4 text-left flex items-center justify-between text-xs sm:text-sm font-bold text-slate-200 hover:text-[#4bc2e3] cursor-pointer"
+                    >
+                      <span>{faq.q}</span>
+                      {isOpen ? <ChevronUp className="w-4 h-4 text-[#4bc2e3] shrink-0 ml-2" /> : <ChevronDown className="w-4 h-4 text-slate-500 shrink-0 ml-2" />}
+                    </button>
+                    {isOpen && (
+                      <div className="px-4 pb-4 pt-1 text-xs text-slate-400 border-t border-slate-800/50 leading-relaxed">
+                        {faq.a}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* ---------------- FOOTER ---------------- */}
+      <footer className="w-full border-t border-slate-800/80 bg-[#070b0e] py-8 px-4 text-center mt-12 text-slate-400 text-xs">
+        <div className="max-w-6xl mx-auto flex flex-col items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-[#4bc2e3] flex items-center justify-center text-[#0b1116] font-black text-sm">
+              R
+            </div>
+            <span className="font-bold text-base text-white">
+              ROBUX <span className="text-[#4bc2e3]">STORE</span>
+            </span>
+          </div>
+
+          <div className="flex items-center justify-center flex-wrap gap-2 text-[11px] text-slate-300 font-semibold my-1">
+            <span className="px-2.5 py-1 bg-[#111a22] border border-slate-800 rounded-md">Google Pay</span>
+            <span className="px-2.5 py-1 bg-[#111a22] border border-slate-800 rounded-md">PhonePe</span>
+            <span className="px-2.5 py-1 bg-[#111a22] border border-slate-800 rounded-md">Paytm UPI</span>
+            <span className="px-2.5 py-1 bg-[#111a22] border border-slate-800 rounded-md">BHIM</span>
+            <span className="px-2.5 py-1 bg-[#111a22] border border-slate-800 rounded-md">Amazon Pay</span>
+          </div>
+
+          <p className="text-[11px] text-slate-400 max-w-xl">
+            ROBUX STORE is an independent gamer platform providing direct digital currency top-ups and group payouts. Not affiliated with or endorsed by Roblox Corporation. Roblox and Robux are registered trademarks of Roblox Corp.
+          </p>
+
+          <div className="flex items-center gap-1 text-[11px] text-slate-400">
+            <span>Official UPI Merchant:</span>
+            <span className="font-mono text-[#4bc2e3] font-bold">naruka13@fam</span>
+          </div>
+
+          <div className="pt-3 border-t border-slate-900 text-slate-400 text-[11px]">
+            © {new Date().getFullYear()} ROBUX STORE. All rights reserved. 256-Bit SSL Encrypted.
+          </div>
+        </div>
+      </footer>
+
+      {/* ---------------- SUCCESS RECEIPT MODAL ---------------- */}
+      {activeOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-lg rounded-2xl bg-[#0f1720] border-2 border-[#4bc2e3] p-6 sm:p-8 shadow-2xl shadow-[0_0_30px_rgba(75,194,227,0.4)] my-8">
+            <button
+              onClick={() => setActiveOrder(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex flex-col items-center text-center mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 mb-3 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                <CheckCircle2 className="w-9 h-9" />
+              </div>
+              <h3 className="font-black text-2xl sm:text-3xl text-white tracking-wide">
+                Payment Submitted!
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-sm">
+                Your transaction has been received and added to our instant automated delivery queue.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#0b1116] border border-[#4bc2e3]/40 mb-6">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4bc2e3] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#4bc2e3]"></span>
+                  </span>
+                  <span className="text-xs font-bold text-[#4bc2e3] uppercase tracking-wider">
+                    Automated Bot Verifying UTR
+                  </span>
+                </div>
+                <span className="text-xs font-mono font-bold text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/30">
+                  ~{Math.floor(secondsRemaining / 60)}:{secondsRemaining % 60 < 10 ? '0' : ''}{secondsRemaining % 60}
+                </span>
+              </div>
+
+              <div className="mt-3 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-400">Order Reference:</span>
+                  <span className="font-mono font-bold text-white">{activeOrder.orderId}</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-400">Roblox Account:</span>
+                  <span className="font-bold text-emerald-400">@{activeOrder.username}</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-400">Package:</span>
+                  <span className="font-bold text-white">{activeOrder.packageItem.name}</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-400">Paid Amount:</span>
+                  <span className="font-bold text-[#4bc2e3]">{activeOrder.packageItem.formattedPrice}</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-400">Submitted UTR:</span>
+                  <span className="font-mono text-slate-300">{activeOrder.utrCode}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <button
+                onClick={() => {
+                  const receiptText = `ROBUX STORE ORDER RECEIPT\nOrder ID: ${activeOrder.orderId}\nRoblox Username: @${activeOrder.username}\nPackage: ${activeOrder.packageItem.name}\nAmount: ${activeOrder.packageItem.formattedPrice}\nUTR Code: ${activeOrder.utrCode}\nStatus: In Processing (5-15 mins)\nDate: ${activeOrder.timestamp}`;
+                  navigator.clipboard?.writeText(receiptText);
+                  setCopiedReceipt(true);
+                  setTimeout(() => setCopiedReceipt(false), 3000);
+                }}
+                className="py-3 px-4 rounded-xl bg-[#16222f] hover:bg-[#1f3142] border border-slate-700 text-slate-200 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                {copiedReceipt ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span className="text-emerald-400">Receipt Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 text-[#4bc2e3]" />
+                    <span>Copy Receipt</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => setActiveOrder(null)}
+                className="py-3 px-4 rounded-xl bg-gradient-to-r from-[#4bc2e3] to-[#0284c7] text-[#0b1116] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all hover:opacity-90 cursor-pointer shadow-[0_0_15px_rgba(75,194,227,0.4)]"
+              >
+                <span>Done / Buy More</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------- TRACK MODAL ---------------- */}
+      {isTrackModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="relative w-full max-w-md rounded-2xl bg-[#0f1720] border-2 border-[#4bc2e3]/80 p-6 sm:p-7 shadow-2xl shadow-[0_0_25px_rgba(75,194,227,0.3)]">
+            <button
+              onClick={() => setIsTrackModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-[#4bc2e3]/20 border border-[#4bc2e3] flex items-center justify-center text-[#4bc2e3]">
+                <Clock className="w-4 h-4" />
+              </div>
+              <h3 className="font-bold text-xl text-white">Track Your Robux Order</h3>
+            </div>
+
+            <p className="text-xs text-slate-400 mb-5">
+              Enter your Order ID (e.g. RBX-12345) or your Roblox Username to view live fulfillment status.
+            </p>
+
+            <form onSubmit={handleTrackSearch} className="space-y-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={trackQuery}
+                  onChange={(e) => setTrackQuery(e.target.value)}
+                  placeholder="Enter Order ID or Roblox Username..."
+                  className="w-full px-4 py-3 bg-[#0b1116] border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#4bc2e3] focus:ring-2 focus:ring-[#4bc2e3]/30 text-sm"
+                />
+                <button
+                  type="submit"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg bg-[#4bc2e3] text-[#0b1116] text-xs font-bold flex items-center gap-1 cursor-pointer hover:opacity-90"
+                >
+                  <Search className="w-3.5 h-3.5" />
+                  <span>Search</span>
+                </button>
+              </div>
+            </form>
+
+            {trackSearched && trackResult && (
+              <div className="mt-5 p-4 rounded-xl bg-[#0b1116] border border-[#4bc2e3]/40 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-400">Status:</span>
+                  <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Active &amp; Verified
+                  </span>
+                </div>
+
+                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                  <div className="bg-gradient-to-r from-[#4bc2e3] to-emerald-400 h-full rounded-full transition-all duration-1000" style={{ width: `${trackResult.progress}%` }}></div>
+                </div>
+
+                <div className="text-xs space-y-1 pt-1 text-slate-300">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Order ID:</span>
+                    <span className="font-mono text-white font-bold">{trackResult.orderId}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Account:</span>
+                    <span className="text-emerald-400">@{trackResult.username}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Item:</span>
+                    <span className="text-white">{trackResult.packName} ({trackResult.amount})</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
